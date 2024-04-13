@@ -1,0 +1,1979 @@
+### Santiago McCafferty, dissertation work 
+## script is split into 5 sections:
+## trend of climbing over time , RQ1, RQ2 , RQ3, RQ4 and all their
+## assosiated code.
+
+
+## installing packages needed for code 
+
+install.packages("tidyverse")
+install.packages("sf")
+install.packages("rnaturalearth")
+install.packages("ggmap")
+install.packages ("rnaturalearthhires")
+install.packages("devtools")
+library(devtools)
+devtools::install_github("ropensci/rnaturalearthhires")
+
+#libs
+
+library(tidyverse)
+library(sf) # For processing spatial data
+library(rnaturalearth) # For retrieving map of UK
+library(ggmap) # For plotting spatial data using ggplot
+library(lubridate)
+library(highcharter)
+
+### Trend of climbing over time 
+
+
+data <- separate(crags, year_month, into = c("Year", "Month"), sep = "-")
+
+
+month_to_remove <- "00"
+
+data1 <- data[data$Month != month_to_remove, ]
+
+
+data1 <- data1 %>%
+  mutate(Year_numeric = as.numeric(Year)) 
+
+data1 <- data1 %>% 
+  filter(Year_numeric %in% c("2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018","2019","2020","2021","2022","2023"))
+
+
+library(dplyr)
+my_summary_data <- data1 %>%
+  group_by(Year_numeric) %>%
+  summarise(unique_visits = n())   
+
+
+## for northern fulmar 
+(RQ3_plotBLK <- my_summary_data %>% 
+    hchart(
+      'line', 
+      hcaes(x = Year_numeric, y = unique_visits),
+      lineColor = "black"
+    ) %>% 
+    hc_xAxis(
+      title = list(text = "<b>Month</b>"),
+      labels = list(style = list(fontSize = "16px")) # Increase font size of x-axis labels
+    ) %>%
+    hc_xAxis(tickLength = 0, gridLineColor = 'transparent') %>% 
+    hc_yAxis(
+      title = list(text = "<b>Mean Number of Climbers</b>"),
+      max = 5,  # Set maximum value to 5
+      labels = list(style = list(fontSize = "12px")) # Keep the font size of y-axis labels unchanged
+    ) %>% 
+    hc_yAxis(tickLength = 0, gridLineColor = 'transparent') %>%
+    hc_xAxis(
+      plotLines = list(
+        list(
+          label = list(text = ""), 
+          color = "black", 
+          width = 3, 
+          value = 2015, 
+          dashStyle = "dot", 
+          zIndex = 1
+        ),
+        list(
+          label = list(text = ""), 
+          color = "black", 
+          width = 3, 
+          value = 2021, 
+          dashStyle = "dot", 
+          zIndex = 1
+        )
+      )
+    ) %>%
+    hc_xAxis(
+      plotBands = list(
+        list(
+          from = 2015,
+          to = 2021,
+          color = hex_to_rgba("grey", 0.05),
+          label = list(text = ""),
+          zIndex = 1
+        )
+      )
+    )
+)
+
+
+
+
+
+(fuk_around <- my_summary_data %>% #we can use the data set used earlier 
+    hchart( # telling R with program to use
+      'line', hcaes(x = Year_numeric, y = unique_visits),
+      lineColor = "black"
+    ) %>% 
+    hc_xAxis(title = list(text = "Year")) %>%
+    hc_xAxis(tickLength = 0, gridLineColor = 'transparent') %>% 
+    hc_yAxis(title = list(text = "Total number of visits")) %>% 
+    hc_yAxis(tickLength = 0, gridLineColor = 'transparent'))
+
+fuk_around|> hc_xAxis(
+  plotLines = list(
+    list(
+      label = list(text = ""),# first plot line
+      color = "black",
+      width = 3,
+      value= 2015,
+      dashStyle = "dot",
+      zIndex = 1
+    ),
+    list(  # Second plot line
+      label = list(text = " "),# Second plot line
+      color = "black",
+      width = 3,
+      value= 2021,
+      dashStyle = "dot",# Adjust the value as needed
+      zIndex = 1
+    )
+  ) )|>
+  hc_xAxis(
+    plotBands = list(
+      list(
+        from = 2015,
+        to = 2021,
+        color = hex_to_rgba("grey", 0.05),
+        label = list(text = "Study period"),
+        # the zIndex is used to put the label text over the grid lines 
+        zIndex = 1
+      )
+    ) 
+  ) 
+
+
+
+fuk_around|> hc_xAxis(
+  title = list(
+    text = "<b>Year</b>", # Make the x-axis title bold
+    style = list(
+      fontSize = "16px" # Increase the font size of the x-axis title
+    )
+  ),
+  labels = list(
+    style = list(
+      fontWeight = "bold", # Make the x-axis labels bold
+      fontSize = "14px" # Increase the font size of the x-axis labels
+    )
+  ),
+  plotLines = list(
+    list(
+      label = list(text = ""),# first plot line
+      color = "black",
+      width = 3,
+      value= 2015,
+      dashStyle = "dot",
+      zIndex = 1
+    ),
+    list(  # Second plot line
+      label = list(text = " "),# Second plot line
+      color = "black",
+      width = 3,
+      value= 2021,
+      dashStyle = "dot",# Adjust the value as needed
+      zIndex = 1
+    )
+  ),
+  plotBands = list(
+    list(
+      from = 2015,
+      to = 2021,
+      color = hex_to_rgba("grey", 0.05),
+      label = list(
+        text = "<b>Study period</b>", # Make the plot band label bold
+        style = list(
+          fontWeight = "bold", # Make the plot band label bold
+          fontSize = "14px" # Increase the font size of the plot band label
+        )
+      ),
+      zIndex = 1
+    )
+  )
+) 
+
+fuk_around|> hc_xAxis(
+  title = list(
+    text = "<b>Year</b>", # Make the x-axis title bold
+    style = list(
+      fontSize = "16px" # Increase the font size of the x-axis title
+    )
+  ),
+  labels = list(
+    style = list(
+      fontWeight = "bold", # Make the x-axis labels bold
+      fontSize = "14px" # Increase the font size of the x-axis labels
+    )
+  ),
+  plotLines = list(
+    list(
+      label = list(text = ""),# first plot line
+      color = "black",
+      width = 3,
+      value= 2015,
+      dashStyle = "dot",
+      zIndex = 1
+    ),
+    list(  # Second plot line
+      label = list(text = " "),# Second plot line
+      color = "black",
+      width = 3,
+      value= 2021,
+      dashStyle = "dot",# Adjust the value as needed
+      zIndex = 1
+    )
+  ),
+  plotBands = list(
+    list(
+      from = 2015,
+      to = 2021,
+      color = hex_to_rgba("grey", 0.05),
+      label = list(
+        text = "<b>Study period</b>", # Make the plot band label bold
+        style = list(
+          fontWeight = "bold", # Make the plot band label bold
+          fontSize = "14px" # Increase the font size of the plot band label
+        )
+      ),
+      zIndex = 1
+    )
+  )
+) %>%
+  hc_yAxis(
+    labels = list(
+      style = list(
+        fontWeight = "bold", # Make the y-axis labels bold
+        fontSize = "14px" # Increase the font size of the y-axis labels
+      )
+    ),
+    title = list(
+      text = "<b>Number of Climbers</b>", # Make the y-axis title bold
+      style = list(
+        fontSize = "16px" # Increase the font size of the y-axis title
+      )
+    )
+  )
+
+#### one verfy nice plot
+
+
+data2 <- data1 %>%
+  mutate(Month_numeric = as.numeric(Month)) 
+
+my_summary_data2 <- data2 %>%
+  group_by(Year_numeric,Month_numeric) %>%
+  summarise(unique_visits = n())   
+
+(fuk_around2 <- my_summary_data2 %>% #we can use the data set used earlier 
+    hchart( # telling R with program to use
+      'line', hcaes(x = Year_numeric,Month_numeric, y = unique_visits),
+      lineColor = "black"
+    ) %>% 
+    hc_xAxis(title = list(text = "Year")) %>%
+    hc_xAxis(tickLength = 0, gridLineColor = 'transparent') %>% 
+    hc_yAxis(title = list(text = "Total number of climbers")) %>% 
+    hc_yAxis(tickLength = 0, gridLineColor = 'transparent'))
+
+
+
+
+
+### RQ1: do climbing areas and bird breeding grounds overlap?----------
+
+getwd()
+setwd("")
+
+## Load and pre-process climbing data
+crags <- read_excel("~/Desktop/Logbook data for Scotland crag under 100m.xlsx") %>%
+  filter(lng >= -8.145 & lng <= 1.747 & lat >= 50.021 & lat <= 60.832) %>% # Exclude sites that are a long way from UK mainland (perhaps misclassified)
+  st_as_sf(coords = c("lng", "lat"), crs = "EPSG:4326") # Set CRS/projection
+
+
+
+## Load and pre-process JNCC seabird count data
+birds <- read_excel("~/Desktop/birds.xlsx") %>%
+  rename(lng = Start.Long, lat = Start.Lat) %>% # Rename lat/long variables to be consistent with crags data
+  filter(lng >= -8.145 & lng <= 1.747 & lat >= 50.021 & lat <= 60.832) %>% # Exclude sites that are a long way from UK mainland (perhaps misclassified)
+  filter(Country=="Scotland") %>% # Retain only records from Scotland
+  st_as_sf(coords = c("lng", "lat"), crs = "EPSG:4326") # Set CRS/projection
+
+## Check which bird species are included in the data
+distinct(birds, Species)
+
+birds <- drop_na(birds, `Seabirds Count adjusted count`)
+
+## Choose one record for each site in the bird data and create a buffer around it
+bird_sites2 <- birds %>%
+  distinct(Species,Site.ID, geometry) %>% # Remove duplicate sites
+  group_by(Site.ID,Species) %>% 
+  mutate(precision = nchar(geometry)) %>%
+  arrange(desc(precision)) %>%
+  slice(1) %>% # Choose the version that has the most precise co-ordinates
+  ungroup() 
+
+
+bird_sites2$Species[bird_sites2$Species == "Comparable - Atlantic Puffin"] <- "Atlantic Puffin"
+
+## Create map of the United Kingdom
+map_uk <- ne_countries(country = "United Kingdom", scale = "large", 
+                       returnclass = "sf")
+## trying to create buffers around the crags instead of around the bid sites
+
+# Assuming you have a dataset named crags that contains the crag points
+
+# Create 200m buffers around each crag
+buffered_crags <- crags %>%
+  distinct(crag_id, geometry) %>% # Remove duplicate sites
+  group_by(crag_id) %>% 
+  mutate(precision = nchar(geometry)) %>%
+  arrange(desc(precision)) %>%
+  slice(1) %>% # Choose the version that has the most precise co-ordinates
+  ungroup() %>%  
+  st_buffer(dist = 200, endCapStyle="ROUND")
+
+# Create a new data frame containing the buffered crags
+buffered_crags_df <- st_sf(geometry = buffered_crags)
+
+# Plot the buffered crags
+ggplot() +
+  geom_sf(data = buffered_crags_df, color = "blue") + # Add buffered crags
+  theme_bw()
+
+## plot buffered crags on a proper map of the uk
+(bufcrag_map <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = buffered_crags_df, shape = 19, size = 5, color = "blue") + # Add crags
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) + # Set limits for map - this is whole of Scotland
+    # coord_sf(ylim = c(57.0,57.1), xlim = c(-2.3, -2.0)) + # Alternative limits - this would zoom in on one bit so that you can see the overlap between crags and bird sites
+    xlab("") +
+    ylab("") + 
+    #facet_wrap(~Species, ncol = 6) + # If included, this line splits the map by species
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 10)
+    ))
+
+
+puffpuff <- bird_sites2 %>% 
+  filter(Species == "Black-legged Kittiwake")
+
+
+
+ggsave(plot = bufcrag_map,
+       filename = 'bufcrag_map.png',
+       width = 12, height = 9, units = 'in')
+
+## ok so right now we have all the unique crags in scotland (904) with a 200m buffer around them
+## lets combing this with the bird data 
+library("ggspatial")
+(birds2 <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = bird_sites2, aes(color = Species), size = 0.3) +
+    annotation_scale(location = "tl", width_hint = 0.3) +
+    annotation_north_arrow(location = "tl", which_north = "true", 
+                           pad_x = unit(0.2, "in"), pad_y = unit(0.25, "in"),
+                           style = north_arrow_fancy_orienteering) + # Add crags
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) +
+    # Set limits for map - this is whole of Scotland
+    # coord_sf(ylim = c(57.0,57.1), xlim = c(-2.3, -2.0)) + c(54.455, 61.), xlim = c(-8.0, 0)) # Alternative limits - this would zoom in on one bit so that you can see the overlap between crags and bird sites
+    xlab("") +
+    ylab("") + 
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 8),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank()
+    ) +
+    facet_wrap(~Species, ncol = 2))
+ggsave(plot = birds2,
+       filename = 'birds2.png',
+       width = 12, height = 9, units = 'in')
+
+(birdcrag_comb69 <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = bird_sites2, aes(color = Species), size = 0.5) + # Add bird sites
+    geom_sf(data = buffered_crags_df, shape = 19, size = 3, color = "blue") + # Add crags
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) +
+    # Set limits for map - this is whole of Scotland
+    # coord_sf(ylim = c(57.0,57.1), xlim = c(-2.3, -2.0)) + c(54.455, 61.), xlim = c(-8.0, 0)) # Alternative limits - this would zoom in on one bit so that you can see the overlap between crags and bird sites
+    xlab("") +
+    ylab("") + 
+    #facet_wrap(Species, ncol = 6) + # If included, this line splits the map by species
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 10)
+    ))
+
+ggsave(plot = birdcrag_comb69,
+       filename = 'birdcrag_comb69.png',
+       width = 12, height = 9, units = 'in')
+
+
+# Filter bird data based on whether they fall within the buffers created around crag sites
+birds_within_buffers <- bird_sites2 %>%
+  st_join(buffered_crags_df) %>%
+  filter(!is.na(crag_id))
+
+(birdcrag_comb3 <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = birds_within_buffers, size = 0.5 , color = "lightgreen") + # Add bird sites
+    geom_sf(data = buffered_crags_df, shape = 19, size = 0.6, color = "blue") + # Add crags within buffers
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) + # Set limits for map - this is whole of Scotland
+    xlab("") +
+    ylab("") + 
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 10)
+    ))
+
+
+ggsave(plot = birdcrag_comb3,
+       filename = 'birdcrag_comb3.png',
+       width = 12, height = 9, units = 'in')
+
+
+# Get unique crag IDs with associated birds
+crag_ids_with_birds <- unique(birds_within_buffers$crag_id)
+
+# Filter buffered crags to keep only those with associated birds
+buffered_crags_with_birds <- buffered_crags_df %>%
+  filter(crag_id %in% crag_ids_with_birds)
+
+(birdcrag_comb_filtered <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = birds_within_buffers, size = 1, color = "lightgreen") + # Add bird sites
+    geom_sf(data = buffered_crags_with_birds, shape = 19, size = 3, color = "blue") + # Add crags within buffers with increased size
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) + # Set limits for map - this is whole of Scotland
+    xlab("") +
+    ylab("") + 
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 10)
+    ) +
+    facet_wrap(~Species, ncol = 2) )
+
+ggsave(plot = birdcrag_comb_filtered,
+       filename = 'birdcrag_comb_filtered.png',
+       width = 12, height = 9, units = 'in')
+
+## making it easier to visualize with different colours for the different 
+#species
+
+
+(birdcrag_comb_filtered2 <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = birds_within_buffers, aes(color = Species), size = 1) + # Add bird sites, mapping color to Species
+    geom_sf(data = buffered_crags_with_birds, shape = 19, size = 3, color = "blue") + # Add crags within buffers with increased size
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) + # Set limits for map - this is whole of Scotland
+    xlab("") +
+    ylab("") + 
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 8)
+    )+ facet_wrap(~Species, ncol = 2))
+
+ggsave(plot = birdcrag_comb_filtered2,
+       filename = 'birdcrag_comb_filtered2.png',
+       width = 12, height = 9, units = 'in')
+
+## density plot can be used to show the density of bird colonies found 
+## at climbing crags spread across scotland.
+
+(dens_plot1 <- ggplot() +
+    stat_density_2d(data = birds_within_buffers, 
+                    mapping = aes(x = purrr::map_dbl(geometry, ~.[1]),
+                                  y = purrr::map_dbl(geometry, ~.[2]),
+                                  fill = after_stat(density)),
+                    geom = 'tile',
+                    contour = FALSE,
+                    alpha = 0.8) +
+    geom_sf(data = map_uk, fill = NA) + 
+    geom_sf(data = birds_within_buffers, aes(color = Species), size = 0.5) + 
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) + # Set limits for map - this is whole of Scotland
+    scale_fill_viridis_c(option = 'magma', direction = -1) +
+    theme_test()+ 
+    facet_wrap(~Species, ncol = 2) )
+
+ggsave(plot = dens_plot1,
+       filename = 'dens_plot1.png',
+       width = 12, height = 9, units = 'in')
+
+### I tried to make that look a bit nicer, but i cant find the code
+
+#end of RQ1
+
+
+
+#### RQ2: is there a possible correlation between the number of climbers per year and bird abundance?  -------------
+
+# For RQ2(1) I want to plot a scatter plot, of annual number of climbers at each 
+#crag on the x axis, then have the bird abundance at that crag on the y axis.
+# it would be cool if this could be "facet_wrapped"  by year.
+
+# currently I feel my data is insufficient/ all over the place , and for that reaason when i 
+#plot the scatter graph it comes out like a positive trend. When clearly it is not.
+
+# for RQ2(2) I want to find the correlation coefficient. between the two.
+
+
+# what i need to do first is create a dataset with total climbers per year
+#so that it is in the same units as the bird abundance data
+
+## here i am making a dataset separating month into two separate columns
+rq2data <- separate(crags, year_month, into = c("Year", "Month"), sep = "-")
+
+##now making a data set with just the necessary stuff. 
+rq2_yearly <- rq2data %>%
+  group_by(name, Year,) %>%
+summarize(Total_visits = sum(unique_visits))
+
+
+#now we have a sexy new dataset that has all the number of times people went to each climbing 
+## venue per year 
+
+
+
+# again we put a buffer Create 200m buffers around each crag because we only care 
+#about crags that have birds in.
+
+rq2_cragsbuffed <- rq2_yearly %>%
+  group_by(name,Year) %>% 
+  mutate(precision = nchar(geometry)) %>%
+  arrange(desc(precision)) %>%
+  slice(1) %>% # Choose the version that has the most precise co-ordinates
+  ungroup() %>%  
+  st_buffer(dist = 200, endCapStyle="ROUND")
+
+
+rq2buffered_df <- st_sf(geometry = rq2_cragsbuffed) # Create a new data frame containing the buffered crags
+
+# Plot the buffered crags
+ggplot() +
+  geom_sf(data = rq2buffered_df, color = "blue") + # Add buffered crags
+  theme_bw()
+
+
+
+## ok so like we did in RQ1 ,  we have all the unique crags in scotland (904) with a 200m buffer around them
+## lets combing this with the bird data 
+
+
+
+# Filter bird data based on whether they fall within the buffers created around crag sites
+rq2birds <- bird_sites2 %>%
+  st_join(rq2buffered_df) %>%
+  filter(!is.na(name))
+
+
+# Get unique crag IDs with associated birds
+rq2places_with_birds <- unique(rq2birds$name)
+
+# Filter buffered crags to keep only those with associated birds
+rq2_crags_with_birds <- rq2birds%>%
+  filter(name %in% rq2places_with_birds)
+### now we have a dataset "rq2craags with birsd" that has all the crags that birds are known 
+##known to inhabit
+
+## This shows the trend of climbing in Scotland.
+
+# Using default ggplot2 graphics
+(vulture_scatter <- ggplot(rq2_crags_with_birds, aes(x = Year, y = Total_visits, colour = name)) +  # linking colour to a factor inside aes() ensures that the points' colour will vary according to the factor levels
+    geom_point())
+
+# that more or less shows the upwards trend of climbing
+
+### ok back to topic, i want to see 
+
+bird_sitesnew <- birds %>%
+  distinct(Species,Site.ID, geometry, `Seabirds Count Year`,`Seabirds Count adjusted count`) %>% # Remove duplicate sites
+  group_by(Site.ID,Species,`Seabirds Count Year`,) %>% 
+  mutate(precision = nchar(geometry)) %>%
+  arrange(desc(precision)) %>%
+  slice(1) %>% # Choose the version that has the most precise co-ordinates
+  ungroup() 
+
+  
+  
+rq2birdstest <- bird_sitesnew %>%
+  st_join(rq2buffered_df) %>%
+  filter(!is.na(name))
+
+
+
+# Get unique crag IDs with associated birds
+rq2places_with_birdstest <- unique(rq2birdstest$name)
+
+# Filter buffered crags to keep only those with associated birds
+rq2_crags_with_birdstest <- rq2birdstest%>%
+  filter(name %in% rq2places_with_birdstest)
+### now we have a dataset "rq2craags with birsd" that has all the crags that birds are known 
+##known to inhabit
+
+
+rq2_cragtotal <- rq2_crags_with_birdstest %>%
+  group_by(name) %>%
+  summarize(Total_visits = sum(Total_visits))
+
+
+rq2_crags_with_birdstest$`Seabirds Count adjusted count` <- as.numeric(rq2_crags_with_birdstest$`Seabirds Count adjusted count`)
+
+# Summarize with removal of NA values
+rq2_cbirdtotal <- rq2_crags_with_birdstest %>%
+  group_by(Species) %>%
+  summarize(Total_abundance = sum(`Seabirds Count adjusted count`, na.rm = TRUE))
+
+
+
+
+rq2_cbirdtotal <-rq2_crags_with_birdstest %>%
+  group_by(Species) %>%
+  summarize(Total_abundance = sum(`Seabirds Count adjusted count`))
+
+
+rq2birdstest2 <- rq2_cragtotal %>%
+  st_join(rq2_cbirdtotal) %>%
+  filter(!is.na(name))
+
+
+
+ggplot(data = rq2_crags_with_birdstest, aes(x = `Seabirds Count adjusted count`, y = Total_visits)) +
+  geom_points()
+
+
+plot_theme <- function(...){
+  theme_bw() +
+    theme(
+      # adjust axes
+      axis.line = element_blank(),
+      axis.text = element_text(size = 14,
+                               color = "black"),
+      axis.text.x = element_text(margin = margin(5, b = 10)),
+      axis.title = element_text(size = 14,
+                                color = 'black'),
+      axis.ticks = element_blank(),
+      
+      # add a subtle grid
+      panel.grid.minor = element_blank(),
+      panel.grid.major = element_line(color = "#dbdbd9", size = 0.2),
+      
+      # adjust background colors
+      plot.background = element_rect(fill = "white",
+                                     color = NA),
+      panel.background = element_rect(fill = "white",
+                                      color = NA),
+      legend.background = element_rect(fill = NA,
+                                       color = NA),
+      # adjust titles
+      legend.title = element_text(size = 14),
+      legend.text = element_text(size = 14, hjust = 0,
+                                 color = "black"),
+      plot.title = element_text(size = 20,
+                                color = 'black',
+                                margin = margin(10, 10, 10, 10),
+                                hjust = 0.5),
+      
+      plot.subtitle = element_text(size = 10, hjust = 0.5,
+                                   color = "black",
+                                   margin = margin(0, 0, 30, 0))
+    )
+  
+}
+rq2_crags_with_birdstest <- rq2_crags_with_birdstest %>% 
+  filter(Year %in% c("2015","2016","2017","2018","2019","2020","2021"))
+
+
+megadata1 <- rq2_crags_with_birdstest %>% 
+  group_by(name,Species,`Seabirds Count Year`,`Seabirds Count adjusted count`) %>% 
+  mutate(avgclimb = mean(Total_visits))
+
+megadata1 <- megadata1 %>% 
+  group_by(name,Species,`Seabirds Count Year`,`Seabirds Count adjusted count`) %>% 
+  mutate(avgbirds = mean(`Seabirds Count adjusted count`))
+
+
+head(megadata1)
+
+megadata1$`Seabirds Count adjusted count` <- 
+  as.numeric(megadata1$`Seabirds Count adjusted count`)
+
+
+
+megadata1 <- megadata1 %>% 
+  distinct(name,avgclimb) %>% 
+  group_by(Species,`Seabirds Count Year`,`Seabirds Count adjusted count`,avgclimb,name )
+
+## plot scatter
+
+(rq2scatter <- ggplot(data = megadata1) +
+    geom_point(aes(x = `Seabirds Count adjusted count`, y = avgclimb),  # change to geom_point() for scatter plot
+               alpha = 0.9,
+               color = '#18a1db') +
+    labs(x = 'Average Number of climbers per year',
+         y = 'Bird abundance',
+         title = 'Total visits to crags per year') +
+    plot_theme())  # apply the custom theme
+
+
+## this is very strongly skewed , maybe lets try add a logged value for bird abundance.
+# Remember, if you put the whole code in the brackets it will
+# display in the plot viewer right away!
+
+# Look at the distribution of the data
+(bird_hist <- ggplot(data = megadata1) +
+    geom_histogram(aes(x = `Seabirds Count adjusted count`),
+                   alpha = 0.9,
+                   fill = '#18a1db') +  # fill the histogram with a nice colour
+    labs(x = 'Value',
+         y = 'Density',
+         title = '') +
+    plot_theme())  # apply the custom theme
+
+ggsave(plot = bird_hist,
+       filename = 'bird_hist.png',
+       width = 12, height = 9, units = 'in')
+
+
+
+
+megadata1 <-  megadata1 %>%
+  mutate(logbirds = log(`Seabirds Count adjusted count`))
+
+megadata1 <-megadata1[megadata1$logbirds >= 0,]
+
+megadata_clean1 <- na.omit(megadata1)
+
+megadata_clean1 <- megadata_clean1 %>%
+  mutate(logavgclimb = log(avgclimb))
+
+
+## now trying to plot logged climbers vs logged bird abundance 
+
+(rq2scatter <- ggplot(data = megadata_clean1) +
+    geom_point(aes(x = logbirds, y = logavgclimb),  # change to geom_point() for scatter plot
+               alpha = 0.9,
+               color = '#18a1db') +
+    labs(x = 'Bird abundance (log)',
+         y = 'Average Number of climbers per year (log)',
+         title = 'Total visits to crags per year') +
+    plot_theme())  # apply the custom theme
+
+
+
+## add trend line and colour by birds 
+
+(rq2scatter <- ggplot(data = megadata_clean1) +
+    geom_point(aes(x = logbirds, y = logavgclimb, color = Species),  # color by species
+               alpha = 0.9) +
+    geom_smooth(aes(x = logbirds, y = logavgclimb, color = Species),  # color by species
+                method = "lm",                     # method for linear regression
+                se = FALSE) +                      # suppress confidence interval
+    labs(x = 'Bird abundance (log)',
+         y = 'Average Number of climbers per year (2008-2023)',
+         title = 'relationship between climbers and birds') 
+  #+ facet_wrap(~`Seabirds Count Year`, ncol = 6) 
+  +
+    plot_theme() ) # apply the custom theme
+
+ggsave(plot = rq2scatter,
+       filename = 'rq2scatter.png',
+       width = 12, height = 9, units = 'in')
+## nice these are the trends with the 11,000 value 
+# now lets remove this annomaly value and see what happens
+
+## trying to remove 
+
+# Assuming your dataframe is named 'megadata' and the column containing species is named 'species'
+
+
+
+megadata_clean12<- na.omit(megadata_clean1$`Seabirds Count adjusted count`)
+
+## plot again and see what happens
+
+(rq2scatter2.0 <- ggplot(data = megadata_clean) +
+    geom_point(aes(x = logbirds, y = avgclimb, color = Species),  # color by species
+               alpha = 0.9) +
+    geom_smooth(aes(x = logbirds, y = avgclimb, color = Species),  # color by species
+                method = "lm",                     # method for linear regression
+                se = FALSE) +                      # suppress confidence interval
+    labs(x = 'Bird abundance (log)',
+         y = 'Average Number of climbers per year',
+         title = 'relationship between climbers and birds') 
+  # facet_wrap(~`Seabirds Count Year`, ncol = 6) 
+  +
+    plot_theme() ) # apply the custom theme
+
+print(rq2scatter2.0)
+ggsave(plot = rq2scatter2.0,
+       filename = 'rq2scatter2.0.png',
+       width = 12, height = 9, units = 'in')
+
+
+####--------
+# Now we run a correlation test 
+
+## with anomaly 
+cor.test(~ logbirds + logavgclimb, data = megadata_clean1, method = "spearman")
+
+###data:  logbirds and logavgclimb
+#t = 1.816, df = 128, p-value = 0.07171
+#alternative hypothesis: true correlation is not equal to 0
+#95 percent confidence interval:
+#  -0.01408382  0.32188862
+#sample estimates:
+#  cor 
+#0.1584866 
+
+#Spearman's rank correlation rho
+
+#data:  logbirds and logavgclimb
+#S = 255697, p-value = 0.6527
+#alternative hypothesis: true rho is not equal to 0
+#sample estimates:
+#       rho 
+#0.04203353 
+
+## now the specific species
+
+
+megadata_blk <- megadata_clean1 %>% 
+  filter(Species == "Black-legged Kittiwake")
+
+cor.test(~ logbirds + logavgclimb, data = megadata_blk, method = "spearman")
+
+#Spearman's rank correlation rho
+
+#data:  logbirds and logavgclimb
+#S = 2229.1, p-value = 0.8862
+#alternative hypothesis: true rho is not equal to 0
+#sample estimates:
+#  rho 
+#0.03083997 
+
+species_freq <- table(megadata_clean1$Species)
+
+# Extract the count for Northern Fulmars
+northern_fulmar_count <- species_freq["European Shag"]
+
+
+
+megadata_AP <- megadata_clean1 %>% 
+  filter(Species == "Comparable - Atlantic Puffin")
+
+cor.test(~ logbirds + logavgclimb, data = megadata_AP, method = "spearman")
+
+### couldnt be done :( 
+
+megadata_ES <- megadata_clean1 %>% 
+  filter(Species == "European Shag")
+
+cor.test(~ logbirds + logavgclimb, data = megadata_ES, method = "spearman")
+
+
+#Spearman's rank correlation rho
+
+#data:  logbirds and logavgclimb
+#S = 8147.1, p-value = 0.8405
+#alternative hypothesis: true rho is not equal to 0
+#sample estimates:
+#  rho 
+#0.0342477 
+
+megadata_NF <- megadata_clean1 %>% 
+  filter(Species == "Northern Fulmar")
+
+cor.test(~ logbirds + logavgclimb, data = megadata_ES, method = "spearman")
+
+total_abundance <- aggregate(`Seabirds Count adjusted count` ~ Species, data = megadata_clean1, FUN = sum)
+
+library(dplyr)
+
+# Group by species and summarize to get individual abundances per species
+individual_abundances <- megadata_clean1 %>%
+  group_by(Species) %>%
+  summarize(Total_Abundance = sum(`Seabirds Count adjusted count`))
+
+
+
+
+
+#Spearman's rank correlation rho
+
+#data:  logbirds and logavgclimb
+#S = 8147.1, p-value = 0.8405
+#alternative hypothesis: true rho is not equal to 0
+#sample estimates:
+#      rho 
+#0.0342477 
+
+### RQ 3 Could seasonality in climbing affect bird abundance 
+
+
+
+### now i wanna plot number of visits per year at these crags 
+## RQ3 seasonility 
+
+## removing values of month that have the value 00 
+
+# cleaning data
+
+
+month_to_remove <- "00"
+
+tryin <- tryin[tryin$Month != month_to_remove, ]
+
+
+tryin$Species[tryin$Species == "Atlantic Puffin"] <- "Atlantic Puffin"
+
+# filtering the data so that it is only the years that birds were recorded
+
+tryin <- tryin %>% 
+  filter(Year %in% c("2015","2016","2017","2018","2019","2020","2021"))
+
+# removing pointless rows
+
+tryin1 <- tryin[, -which(names(tryin) %in% c("altitude","county_name","unique_users","total_ascents","geometry","precision","all_months"))]
+
+# data manipulation-------- to try and get avg climbers per month
+## my current thinking is that the data set is spread over 7 years, and 83 crags. 
+# therefor for each crag, ideally there should be 7 values for "jan,feb,etc"
+#but the dataset is missing those rows . 83 x 7 = 581. Therefore the (sum of the values we do have)/581 = monthly avg
+
+# making a complete df with all missing rows
+
+
+
+tryin2 <- tryin1 %>%
+  group_by(name,Year,Month) %>% 
+  mutate(Month_numeric = as.numeric(Month)) 
+
+tryin2 <- tryin2 %>%
+  mutate(Year_numeric = as.numeric(Year)) 
+
+tryin3 <- tryin2 %>% complete(Year_numeric,Month_numeric,crag_id)
+
+tryin3 %>% complete(Year_numeric, nesting(Month_numeric, crag_id))
+
+tryin3 <- tryin3 %>%
+  dplyr::group_by(Year_numeric) %>%
+  complete(Month_numeric, crag_id)
+
+tryin3 <- tryin3 %>%
+  complete(
+    Year,
+    nesting(Month_numeric, crag_id),
+    fill = list(unique_visits = 0))
+
+
+tryin3 <- tryin3 %>%
+  complete(
+    Year,
+    nesting(Month_numeric, crag_id),
+    fill = list(unique_visits = 0),
+    explicit = FALSE
+  )
+
+# now we have the rows we need; year, month , crag_id,unique visits 
+#we can delete the ones we dont need 
+
+tryin3 <-dplyr::select(tryin3, -c('Month', 'name'))
+
+# df still looks kinda funky 
+# lets delete the rows with NAs 
+
+
+
+tryin3_clean1 <- na.omit(tryin3)
+
+
+merged_df <- merge(tryin3_clean1, birds_within_buffers, by = "crag_id", all.x = TRUE)
+
+
+merged_df$Species[merged_df$Species == "Comparable - Atlantic Puffin"] <- "Atlantic Puffin"
+
+distinct(merged_df,Species)
+
+total_climbers <- merged_df %>% 
+  filter(Species == "Northern Fulmar")
+
+
+TotalAP_climbs <- sum(total_climbers$unique_visits) 
+
+## avg january for the species
+january_data <- merged_df %>%
+  filter(Month_numeric == "1")
+
+january_dataBLK <- january_data %>% 
+  filter(Species == "Black-legged Kittiwake")
+
+
+January <- mean(january_dataBLK$unique_visits)  # Calculate the mean of values in the column
+
+
+## avg feb
+
+feb_data <- merged_df %>%
+  filter(Month_numeric == "2")
+
+feb_dataBLK <- feb_data %>%
+  filter(Species == "Black-legged Kittiwake")
+
+Febuary <- mean(feb_dataBLK$unique_visits)  # Calculate the mean of values in the column
+
+##avg march
+
+march_data <- merged_df %>%
+  filter(Month_numeric == "3")
+
+mar_dataBLK <- march_data %>%
+  filter(Species == "Black-legged Kittiwake")
+
+March <- mean(mar_dataBLK$unique_visits)  # Calculate the sum of values in the column
+
+##avg april
+
+april_data <- merged_df %>%
+  filter(Month_numeric == "4")
+
+
+apr_dataBLK <- april_data %>%
+  filter(Species == "Black-legged Kittiwake")
+
+
+
+April <- mean(apr_dataBLK$unique_visits)  # Calculate the sum of values in the column
+
+##avg may
+
+may_data <- merged_df %>%
+  filter(Month_numeric == "5")
+
+may_dataBLK <- may_data %>%
+  filter(Species == "Black-legged Kittiwake")
+
+
+May <- mean(may_dataBLK$unique_visits)  # Calculate the sum of values in the column
+
+
+##avgjune
+
+june_data <- merged_df %>%
+  filter(Month_numeric == "6")
+
+
+june_dataBLK <- june_data %>%
+  filter(Species == "Black-legged Kittiwake")
+
+
+June <- mean(june_dataBLK$unique_visits)  # Calculate the sum of values in the column
+
+##avg july
+
+july_data <- merged_df %>%
+  filter(Month_numeric == "7")
+
+
+
+july_dataBLK <- july_data %>%
+  filter(Species == "Black-legged Kittiwake")
+
+
+July <- mean(july_dataBLK$unique_visits)  # Calculate the sum of values in the column
+
+
+##avg august
+
+aug_data <- merged_df %>%
+  filter(Month_numeric == "8")
+
+
+aug_dataBLK <- aug_data %>%
+  filter(Species == "Black-legged Kittiwake")
+
+
+
+August <- mean(aug_dataBLK$unique_visits)  # Calculate the sum of values in the column
+
+
+##avg sept
+
+sept_data <- merged_df %>%
+  filter(Month_numeric == "9")
+
+
+sep_dataBLK <- sept_data %>%
+  filter(Species == "Black-legged Kittiwake")
+
+
+
+September <- mean(sep_dataBLK$unique_visits)  # Calculate the sum of values in the column
+
+##avg october
+
+oct_data <- merged_df %>%
+  filter(Month_numeric == "10")
+
+
+oct_dataBLK <- oct_data %>%
+  filter(Species == "Black-legged Kittiwake")
+
+
+
+October <- mean(oct_dataBLK$unique_visits)  # Calculate the sum of values in the column
+
+##avg november
+
+nov_data <- merged_df %>%
+  filter(Month_numeric == "11")
+
+
+nov_dataBLK <- nov_data %>%
+  filter(Species == "Black-legged Kittiwake")
+
+
+
+November <- mean(nov_dataBLK$unique_visits)  # Calculate the sum of values in the column
+
+##avg decemeber
+
+dec_data <- merged_df %>%
+  filter(Month_numeric == "12")
+
+
+dec_dataBLK <- dec_data %>%
+  filter(Species == "Black-legged Kittiwake")
+
+
+Decemeber <- mean(dec_dataBLK$unique_visits)  # Calculate the sum of values in the column
+
+
+
+### create a DF with values in
+
+RQ3dataBLK <- data.frame(January,Febuary,March,April,May,June,July,August,September,October,November,Decemeber)
+
+RQ3dataBLK <- pivot_longer(RQ3dataBLK, 
+                           cols = everything(),  # Reshape all columns
+                           names_to = "month",   # Name for the new column containing original column names
+                           values_to = "average_climbers")
+########------------------------------------------------------------------------------------
+
+## avg january for the species
+january_data <- merged_df %>%
+  filter(Month_numeric == "1")
+
+january_dataES <- january_data %>% 
+  filter(Species == "European Shag")
+
+
+January <- mean(january_dataES$unique_visits)  # Calculate the mean of values in the column
+
+## avg feb
+
+feb_data <- merged_df %>%
+  filter(Month_numeric == "2")
+
+feb_dataES <- feb_data %>%
+  filter(Species == "European Shag")
+
+Febuary <- mean(feb_dataES$unique_visits)  # Calculate the mean of values in the column
+
+##avg march
+
+march_data <- merged_df %>%
+  filter(Month_numeric == "3")
+
+mar_dataES <- march_data %>%
+  filter(Species == "European Shag")
+
+March <- mean(mar_dataES$unique_visits)  # Calculate the sum of values in the column
+
+##avg april
+
+april_data <- merged_df %>%
+  filter(Month_numeric == "4")
+
+
+apr_dataES <- april_data %>%
+  filter(Species == "European Shag")
+
+
+
+April <- mean(apr_dataES$unique_visits)  # Calculate the sum of values in the column
+
+##avg may
+
+may_data <- merged_df %>%
+  filter(Month_numeric == "5")
+
+may_dataES <- may_data %>%
+  filter(Species == "European Shag")
+
+
+May <- mean(may_dataES$unique_visits)  # Calculate the sum of values in the column
+
+
+##avgjune
+
+june_data <- merged_df %>%
+  filter(Month_numeric == "6")
+
+
+june_dataES <- june_data %>%
+  filter(Species == "European Shag")
+
+
+June <- mean(june_dataES$unique_visits)  # Calculate the sum of values in the column
+
+##avg july
+
+july_data <- merged_df %>%
+  filter(Month_numeric == "7")
+
+
+
+july_dataES <- july_data %>%
+  filter(Species == "European Shag")
+
+
+July <- mean(july_dataES$unique_visits)  # Calculate the sum of values in the column
+
+
+##avg august
+
+aug_data <- merged_df %>%
+  filter(Month_numeric == "8")
+
+
+aug_dataES <- aug_data %>%
+  filter(Species == "European Shag")
+
+
+
+August <- mean(aug_dataES$unique_visits)  # Calculate the sum of values in the column
+
+
+##avg sept
+
+sept_data <- merged_df %>%
+  filter(Month_numeric == "9")
+
+
+sep_dataES <- sept_data %>%
+  filter(Species == "European Shag")
+
+
+
+September <- mean(sep_dataES$unique_visits)  # Calculate the sum of values in the column
+
+##avg october
+
+oct_data <- merged_df %>%
+  filter(Month_numeric == "10")
+
+
+oct_dataES <- oct_data %>%
+  filter(Species == "European Shag")
+
+
+
+October <- mean(oct_dataES$unique_visits)  # Calculate the sum of values in the column
+
+##avg november
+
+nov_data <- merged_df %>%
+  filter(Month_numeric == "11")
+
+
+nov_dataES <- nov_data %>%
+  filter(Species == "European Shag")
+
+
+
+November <- mean(nov_dataES$unique_visits)  # Calculate the sum of values in the column
+
+##avg decemeber
+
+dec_data <- merged_df %>%
+  filter(Month_numeric == "12")
+
+
+dec_dataES <- dec_data %>%
+  filter(Species == "European Shag")
+
+
+Decemeber <- mean(dec_dataES$unique_visits)  # Calculate the sum of values in the column
+
+
+
+### create a DF with values in
+
+RQ3dataES <- data.frame(January,Febuary,March,April,May,June,July,August,September,October,November,Decemeber)
+
+RQ3dataES <- pivot_longer(RQ3dataES, 
+                          cols = everything(),  # Reshape all columns
+                          names_to = "month",   # Name for the new column containing original column names
+                          values_to = "average_climbers")
+
+
+##############------------------------------------------------------------------------------
+
+
+## avg january for the species
+january_data <- merged_df %>%
+  filter(Month_numeric == "1")
+
+january_dataAP <- january_data %>% 
+  filter(Species == "Atlantic Puffin")
+
+
+January <- mean(january_dataAP$unique_visits)  # Calculate the mean of values in the column
+
+## avg feb
+
+feb_data <- merged_df %>%
+  filter(Month_numeric == "2")
+
+feb_dataAP <- feb_data %>%
+  filter(Species == "Atlantic Puffin")
+
+Febuary <- mean(feb_dataAP$unique_visits)  # Calculate the mean of values in the column
+
+##avg march
+
+march_data <- merged_df %>%
+  filter(Month_numeric == "3")
+
+mar_dataAP <- march_data %>%
+  filter(Species == "Atlantic Puffin")
+
+March <- mean(mar_dataAP$unique_visits)  # Calculate the sum of values in the column
+
+##avg april
+
+april_data <- merged_df %>%
+  filter(Month_numeric == "4")
+
+
+apr_dataAP <- april_data %>%
+  filter(Species == "Atlantic Puffin")
+
+
+
+April <- mean(apr_dataAP$unique_visits)  # Calculate the sum of values in the column
+
+##avg may
+
+may_data <- merged_df %>%
+  filter(Month_numeric == "5")
+
+may_dataAP <- may_data %>%
+  filter(Species == "Atlantic Puffin")
+
+
+May <- mean(may_dataAP$unique_visits)  # Calculate the sum of values in the column
+
+
+##avgjune
+
+june_data <- merged_df %>%
+  filter(Month_numeric == "6")
+
+
+june_dataAP <- june_data %>%
+  filter(Species == "Atlantic Puffin")
+
+
+June <- mean(june_dataAP$unique_visits)  # Calculate the sum of values in the column
+
+##avg july
+
+july_data <- merged_df %>%
+  filter(Month_numeric == "7")
+
+
+
+july_dataAP <- july_data %>%
+  filter(Species == "Atlantic Puffin")
+
+
+July <- mean(july_dataAP$unique_visits)  # Calculate the sum of values in the column
+
+
+##avg august
+
+aug_data <- merged_df %>%
+  filter(Month_numeric == "8")
+
+
+aug_dataAP <- aug_data %>%
+  filter(Species == "Atlantic Puffin")
+
+
+
+August <- mean(aug_dataAP$unique_visits)  # Calculate the sum of values in the column
+
+
+##avg sept
+
+sept_data <- merged_df %>%
+  filter(Month_numeric == "9")
+
+
+sep_dataAP <- sept_data %>%
+  filter(Species == "Atlantic Puffin")
+
+
+
+September <- mean(sep_dataAP$unique_visits)  # Calculate the sum of values in the column
+
+##avg october
+
+oct_data <- merged_df %>%
+  filter(Month_numeric == "10")
+
+
+oct_dataAP <- oct_data %>%
+  filter(Species == "Atlantic Puffin")
+
+
+
+October <- mean(oct_dataAP$unique_visits)  # Calculate the sum of values in the column
+
+##avg november
+
+nov_data <- merged_df %>%
+  filter(Month_numeric == "11")
+
+
+nov_dataAP <- nov_data %>%
+  filter(Species == "Atlantic Puffin")
+
+
+
+November <- mean(nov_dataAP$unique_visits)  # Calculate the sum of values in the column
+
+##avg decemeber
+
+dec_data <- merged_df %>%
+  filter(Month_numeric == "12")
+
+
+dec_dataAP <- dec_data %>%
+  filter(Species == "Atlantic Puffin")
+
+
+Decemeber <- sum(dec_dataAP$unique_visits)  # Calculate the sum of values in the column
+
+
+
+### create a DF with values in
+
+RQ3dataAP <- data.frame(January,Febuary,March,April,May,June,July,August,September,October,November,Decemeber)
+
+RQ3dataAP <- pivot_longer(RQ3dataAP, 
+                          cols = everything(),  # Reshape all columns
+                          names_to = "month",   # Name for the new column containing original column names
+                          values_to = "average_climbers")
+
+
+
+
+###########----------------------------------------------------------------------------------------------------------
+
+
+## avg january for the species
+january_data <- merged_df %>%
+  filter(Month_numeric == "1")
+
+january_dataNF <- january_data %>% 
+  filter(Species == "Northern Fulmar")
+
+January <- mean(january_dataNF$unique_visits)  # Calculate the mean of values in the column
+
+## avg feb
+
+feb_data <- merged_df %>%
+  filter(Month_numeric == "2")
+
+feb_dataNF <- feb_data %>%
+  filter(Species == "Northern Fulmar")
+Febuary <- mean(feb_dataNF$unique_visits)  # Calculate the mean of values in the column
+
+##avg march
+
+march_data <- merged_df %>%
+  filter(Month_numeric == "3")
+
+mar_dataNF <- march_data %>%
+  filter(Species == "Northern Fulmar")
+March <- mean(mar_dataNF$unique_visits)  # Calculate the sum of values in the column
+
+##avg april
+
+april_data <- merged_df %>%
+  filter(Month_numeric == "4")
+
+
+apr_dataNF <- april_data %>%
+  filter(Species == "Northern Fulmar")
+
+
+April <- mean(apr_dataNF$unique_visits)  # Calculate the sum of values in the column
+
+##avg may
+
+may_data <- merged_df %>%
+  filter(Month_numeric == "5")
+
+may_dataNF <- may_data %>%
+  filter(Species == "Northern Fulmar")
+
+May <- mean(may_dataNF$unique_visits)  # Calculate the sum of values in the column
+
+
+##avgjune
+
+june_data <- merged_df %>%
+  filter(Month_numeric == "6")
+
+
+june_dataNF <- june_data %>%
+  filter(Species == "Northern Fulmar")
+
+June <- mean(june_dataNF$unique_visits)  # Calculate the sum of values in the column
+
+##avg july
+
+july_data <- merged_df %>%
+  filter(Month_numeric == "7")
+
+
+
+july_dataNF <- july_data %>%
+  filter(Species == "Northern Fulmar")
+
+July <- mean(july_dataNF$unique_visits)  # Calculate the sum of values in the column
+
+
+##avg august
+
+aug_data <- merged_df %>%
+  filter(Month_numeric == "8")
+
+
+aug_dataNF <- aug_data %>%
+  filter(Species == "Northern Fulmar")
+
+
+August <- mean(aug_dataNF$unique_visits)  # Calculate the sum of values in the column
+
+
+##avg sept
+
+sept_data <- merged_df %>%
+  filter(Month_numeric == "9")
+
+
+sep_dataNF <- sept_data %>%
+  filter(Species == "Northern Fulmar")
+
+
+September <- mean(sep_dataNF$unique_visits)  # Calculate the sum of values in the column
+
+##avg october
+
+oct_data <- merged_df %>%
+  filter(Month_numeric == "10")
+
+
+oct_dataNF <- oct_data %>%
+  filter(Species == "Northern Fulmar")
+
+
+October <- mean(oct_dataNF$unique_visits)  # Calculate the sum of values in the column
+
+##avg november
+
+nov_data <- merged_df %>%
+  filter(Month_numeric == "11")
+
+
+nov_dataNF <- nov_data %>%
+  filter(Species == "Northern Fulmar")
+
+
+November <- mean(nov_dataNF$unique_visits)  # Calculate the sum of values in the column
+
+##avg decemeber
+
+dec_data <- merged_df %>%
+  filter(Month_numeric == "12")
+
+
+dec_dataNF <- dec_data %>%
+  filter(Species == "Northern Fulmar")
+
+RQ3dataNF <- data.frame(January,Febuary,March,April,May,June,July,August,September,October,November,Decemeber)
+
+RQ3dataNF <- pivot_longer(RQ3dataNF, 
+                          cols = everything(),  # Reshape all columns
+                          names_to = "month",   # Name for the new column containing original column names
+                          values_to = "average_climbers")
+
+
+### create a DF with values in
+
+
+
+
+
+
+
+
+
+
+
+
+
+## creating plot
+
+
+install.packages("classname")
+library(highcharter)
+
+
+
+
+# Set highcharter options
+options(highcharter.theme = hc_theme_smpl(tooltip = list(valueDecimals = 2)))
+
+### so what im doing here is just using climbing data from 2015-2021
+
+## for NF
+
+
+(RQ3_plotNF <- RQ3dataNF %>% #tells the data frane
+    hchart(
+      "line", 
+      hcaes(x = month, y = average_climbers )
+    ))
+
+
+### kinda basic, lets try and make this a bit nicer.
+
+
+
+(RQ3_plotNF <- RQ3dataNF %>% #we can use the data set used earlier 
+    hchart( # telling R with program to use
+      'line', hcaes(x = month, y = average_climbers),
+      lineColor = "black"
+    ) %>% 
+    hc_xAxis(title = list(text = "Month")) %>%
+    hc_xAxis(tickLength = 0, gridLineColor = 'transparent') %>% 
+    hc_yAxis(title = list(text = "Mean Number of Climbers")) %>% 
+    hc_yAxis(tickLength = 0, gridLineColor = 'transparent'))
+
+
+# now we wanna overlay some set lines 
+
+# # add breeding season lines, remove grid lines, make axis thicker, if ggplot use theme_classic(), and text larger and more legible 
+
+## for northern fulmar 
+(RQ3_plotBLK <- RQ3dataNF %>% 
+    hchart(
+      'line', 
+      hcaes(x = month, y = average_climbers),
+      lineColor = "black"
+    ) %>% 
+    hc_xAxis(
+      title = list(text = "<b>Month</b>"),
+      labels = list(style = list(fontSize = "16px")) # Increase font size of x-axis labels
+    ) %>%
+    hc_xAxis(tickLength = 0, gridLineColor = 'transparent') %>% 
+    hc_yAxis(
+      title = list(text = "<b>Mean Number of Climbers</b>"),
+      max = 5,  # Set maximum value to 5
+      labels = list(style = list(fontSize = "12px")) # Keep the font size of y-axis labels unchanged
+    ) %>% 
+    hc_yAxis(tickLength = 0, gridLineColor = 'transparent') %>%
+    hc_xAxis(
+      plotLines = list(
+        list(
+          label = list(text = ""), 
+          color = "black", 
+          width = 3, 
+          value = 4, 
+          dashStyle = "dot", 
+          zIndex = 1
+        ),
+        list(
+          label = list(text = ""), 
+          color = "black", 
+          width = 3, 
+          value = 8, 
+          dashStyle = "dot", 
+          zIndex = 1
+        )
+      )
+    ) %>%
+    hc_xAxis(
+      plotBands = list(
+        list(
+          from = 4,
+          to = 8,
+          color = hex_to_rgba("grey", 0.05),
+          label = list(text = ""),
+          zIndex = 1
+        )
+      )
+    )
+)
+
+
+library(ggplot2)
+library(patchwork)
+
+# Assuming you have four sf data frames: sf_data1, sf_data2, sf_data3, and sf_data4
+
+# Create four geom_sf plots
+
+
+# end
+
+
+
+getcoord <- merge(megadata1,crags, by = "name")
+
+
+getcoord2 <- getcoord %>% 
+  distinct(name) %>% 
+  group_by(name)
+
+
+
+# Create a new data frame containing the buffered crags
+getcoord_df <- st_sf(geometry = getcoord)
+
+
+
+## kinda basic map tbh
+
+(risk_map <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = getcoord_df, size = Population , color = Species) + # Add crags
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) +
+    # Set limits for map - this is whole of Scotland
+    # coord_sf(ylim = c(57.0,57.1), xlim = c(-2.3, -2.0)) + # Alternative limits - this would zoom in on one bit so that you can see the overlap between crags and bird sites
+    xlab("") +
+    ylab("") + 
+    #facet_wrap(Species, ncol = 6) + # If included, this line splits the map by species
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 10)
+    ))
+
+## make a bubble plot 
+
+Population <- getcoord_df$`Seabirds Count adjusted count`
+
+# Create the bubble plot
+(risk_map <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = getcoord_df, aes(fill = Species, size = Population), color = colors) + # Color by species and size by population
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) +
+    xlab("") +
+    ylab("") + 
+    scale_fill_discrete(name = "Species") + # Add legend for species
+    scale_size_continuous(name = "Population") + # Add legend for population
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 10)
+    ))
+
+## trying something else ------------------------------------------------------------------------
+
+library("ggspatial")
+
+library("sf")
+
+getcoord_dfnew <- getcoord_df %>% 
+  distinct(name,Species,avgclimb,`Seabirds Count adjusted count`,geometry) %>%
+  group_by(name,Species)
+
+Population <- getcoord_dfnew$`Seabirds Count adjusted count`
+
+
+(riskmap2 <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = getcoord_dfnew, aes(fill = Species, size = 0.1), color = "blue") + # Add crags
+    geom_rect(xmin = -8., xmax = -7., ymin = 56.5, ymax = 57., 
+              fill = NA, color = "black", linewidth = 0.5) + # Add rectangle
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) + # Set limits for map - this is whole of Scotland
+    xlab("") +
+    ylab("")  +
+    #facet_wrap(~Species, ncol = 6) + # If included, this line splits the map by species
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 10)
+    ))
+
+library("ggspatial")
+
+
+(riskmap_scotland <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = getcoord_dfnew, aes(color = Risk,size = Population) ) + # Add crags
+    annotation_scale(location = "tl", width_hint = 0.3) +
+    annotation_north_arrow(location = "tl", which_north = "true", 
+                           pad_x = unit(0.2, "in"), pad_y = unit(0.25, "in"),
+                           style = north_arrow_fancy_orienteering) + 
+    
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) + # Set limits for map - this is whole of Scotland # Add rectangle
+    xlab("") +
+    ylab("") +
+    #facet_wrap(~Species, ncol = 6) + # If included, this line splits the map by species
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 8),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank()
+    )+
+    facet_wrap(~Species, ncol = 2))
+
+
+getcoord_dfnew$Species[getcoord_dfnew$Species == "Comparable - Atlantic Puffin"] <- "Atlantic Puffin"
+
+
+getcoord_dfnew <- subset(getcoord_dfnew, !is.na(`Seabirds Count adjusted count`))
+
+getcoord_dfnew <- getcoord_dfnew[complete.cases(getcoord_dfnew$`Seabirds Count adjusted count`), ]
+
+getcoord_dfnew <- getcoord_dfnew[!is.na(getcoord_dfnew$`Seabirds Count Year`), ]
+
+
+(riskmap_scotland <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = getcoord_dfnew, aes(size = `Seabirds Count adjusted count`)) + # Add crags
+    labs(size = "Bird Abundance") +  # Change legend title for Population variable
+    scale_colour_manual(values = c("Low < 5 Climbers per Year" = "grey50", "Medium < 50 Climbers per Year" = "green", "High > 50 Climbers per Year" = "red")) +
+    
+    annotation_scale(location = "tl", width_hint = 0.3) +
+    annotation_north_arrow(location = "tl", which_north = "true", 
+                           pad_x = unit(0.2, "in"), pad_y = unit(0.25, "in"),
+                           style = north_arrow_fancy_orienteering) + 
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) + # Set limits for map - this is whole of Scotland # Add rectangle
+    xlab("") +
+    ylab("") +
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 8),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank()
+    ) +
+    facet_wrap(~Species, ncol = 2))
+
+
+(riskmap_scotland <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = getcoord_dfnew, aes(size = `Seabirds Count adjusted count`, color = avgclimb)) + # Add crags
+    labs(size = "Bird Abundance", color = "avgclimb") +  # Change legend title for Population variable
+    scale_color_manual(values = c("Low < 5 Climbers per Year" = "lightgreen", "Medium < 50 Climbers per Year" = "yellow", "High > 50 Climbers per Year" = "red")) +
+    
+    annotation_scale(location = "tl", width_hint = 0.3) +
+    annotation_north_arrow(location = "tl", which_north = "true", 
+                           pad_x = unit(0.2, "in"), pad_y = unit(0.25, "in"),
+                           style = north_arrow_fancy_orienteering) + 
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) + # Set limits for map - this is whole of Scotland # Add rectangle
+    xlab("") +
+    ylab("") +
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 8),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank()
+    ) +
+    facet_wrap(~Species, ncol = 2))
+
+library(sf)
+
+low_category <- "Low < 5 Climbers per Year"
+medium_category <- "Medium < 50 Climbers per Year"
+high_category <- "High > 50 Climbers per Year"
+
+# Create a new column in your data frame representing the climbing frequency category
+eedurb <- getcoord_dfnew %>%
+  mutate(avgclimb_category = case_when(
+    avgclimb < 5 ~ low_category,
+    avgclimb >= 5 & avgclimb < 50 ~ medium_category,
+    avgclimb >= 50 ~ high_category
+  ))
+
+# Now, arrange the data frame based on the climbing frequency category
+flerb <- eedurb %>%
+  arrange(factor(avgclimb_category, levels = c(low_category, medium_category, high_category)))
+
+flerb1 <- getcoord_dfnew %>% 
+  arrange(avgclimb)
+
+
+
+(riskmap_scotland <- ggplot() +
+    geom_sf(data = map_uk, fill = "grey95") + # Add UK map
+    geom_sf(data = flerb1, aes(size = `Seabirds Count adjusted count`, color = avgclimb)) + # Add crags
+    labs(size = "Bird Abundance", color = "Risk") +  # Change legend title for Population variable
+    scale_color_manual(values = c("Low < 5 Climbers per Year" = "lightgreen", "Medium < 50 Climbers per Year" = "yellow", "High > 50 Climbers per Year" = "red")) +
+    
+    annotation_scale(location = "tl", width_hint = 0.3) +
+    annotation_north_arrow(location = "tl", which_north = "true", 
+                           pad_x = unit(0.1, "in"), pad_y = unit(0.25, "in"),
+                           style = north_arrow_fancy_orienteering) + 
+    coord_sf(ylim = c(54.455, 61.), xlim = c(-8.0, 0)) + # Set limits for map - this is whole of Scotland # Add rectangle
+    xlab("") +
+    ylab("") +
+    theme_bw() +
+    theme(
+      strip.background = element_blank(), 
+      strip.text = element_text(face = "bold", size = 8),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank()
+    ) +
+    facet_wrap(~Species, ncol = 2))
+
+
+
+ggsave(plot = riskmap_scotland,
+       filename = 'riskmap_scotland.png',
+       width = 12, height = 9, units = 'in')
+
+breaks <- c(-Inf, 5, 50,  Inf)  # Define breaks at -Inf, -1, 0, 1, Inf
+
+# Create categories using cut()
+getcoord_dfnew$avgclimb <- cut(getcoord_dfnew$avgclimb, breaks = breaks, labels = c( "Low < 5 Climbers per Year", "Medium < 50 Climbers per Year", "High > 50 Climbers per Year" ))
+
+
+
+Risk <- getcoord_dfnew$avgclimb
+
+plopplot <- getcoord_dfnew %>% filter(Species == "European Shag")
+
+
+
+
+
+
